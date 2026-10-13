@@ -19,7 +19,7 @@ import {
 import { getAllAreas } from '../lib/areas';
 import { useLiveScan, type ScanAlert } from '../lib/scan';
 import { useServerState } from '../lib/serverState';
-import type { RiskLevel } from '../types';
+import type { MonitoringArea, RiskAssessment, RiskLevel } from '../types';
 import WorldMap, { type MapPoint } from '../components/WorldMap';
 import RiskBadge from '../components/RiskBadge';
 import { formatDate, formatRelative, formatLatLon } from '../lib/format';
@@ -58,12 +58,72 @@ export default function WarRoom() {
       .map((a) => a.areaId),
   );
 
-  const points: MapPoint[] = scans.map((s) => ({
+  // Client-scanned areas (seeds + user-added).
+  const clientPoints: MapPoint[] = scans.map((s) => ({
     area: s.area,
     risk: s.risk,
     latestObservationDate: s.latestObservationDate,
     blip: blipIds.has(s.area.id),
   }));
+
+  // Server-scanned watchlist sites, rendered from /api/state.
+  // These are the 40 global rangeland sites checked by the daily cron.
+  const clientIds = new Set(scans.map((s) => s.area.id));
+  const serverPoints: MapPoint[] = serverState.areas
+    .filter((a) => !clientIds.has(a.areaId))
+    .map((a) => {
+      const area: MonitoringArea = {
+        id: a.areaId,
+        name: a.areaName,
+        region: a.region,
+        latitude: a.latitude,
+        longitude: a.longitude,
+        radiusKm: a.radiusKm,
+        demonstration: false,
+        createdAt: a.lastScanAt,
+        series: [],
+      };
+      const risk: RiskAssessment = {
+        level: a.lastRiskLevel,
+        headline:
+          a.lastRiskLevel === 'insufficient'
+            ? 'Insufficient observations for a reliable assessment.'
+            : a.lastRiskLevel === 'high'
+            ? 'Elevated vegetation decline detected at this site.'
+            : a.lastRiskLevel === 'moderate'
+            ? 'Material vegetation decline — investigate potential causes.'
+            : 'Vegetation appears broadly stable over the assessment window.',
+        evidence: [
+          {
+            label: 'Last NDVI value',
+            value: a.lastNdvi != null ? a.lastNdvi.toFixed(3) : '—',
+            direction: 'neutral',
+          },
+          {
+            label: 'Last rainfall value',
+            value: a.lastRainfall != null ? `${a.lastRainfall.toFixed(1)} mm` : '—',
+            direction: 'neutral',
+          },
+          {
+            label: 'Server scan',
+            value: new Date(a.lastScanAt).toISOString().slice(0, 16).replace('T', ' '),
+            direction: 'neutral',
+          },
+        ],
+        alternativeExplanations: [],
+        recommendedActions: [],
+        computedAt: a.lastScanAt,
+        basedOn: 'observations',
+      };
+      return {
+        area,
+        risk,
+        latestObservationDate: a.lastScanAt.slice(0, 10),
+        blip: blipIds.has(a.areaId),
+      };
+    });
+
+  const points: MapPoint[] = [...clientPoints, ...serverPoints];
 
   const filteredScans = filter === 'all' ? scans : scans.filter((s) => s.risk.level === filter);
 
@@ -71,9 +131,9 @@ export default function WarRoom() {
 
   const counts = useMemo(() => {
     const c = { high: 0, moderate: 0, low: 0, insufficient: 0 };
-    for (const s of scans) c[s.risk.level] += 1;
+    for (const p of points) c[p.risk.level] += 1;
     return c;
-  }, [scans]);
+  }, [points]);
 
   return (
     <div className="warroom">
