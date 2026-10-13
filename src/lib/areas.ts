@@ -1,4 +1,4 @@
-﻿// =============================================================================
+// =============================================================================
 // INVISIBLE GRAZING — Working set of monitoring areas
 // =============================================================================
 // Combines user-created areas (persisted in localStorage) with four real seed
@@ -69,7 +69,25 @@ export function getUserAreas(): MonitoringArea[] {
 }
 
 export function getAreaById(id: string): MonitoringArea | undefined {
-  return getAllAreas().find((a) => a.id === id);
+  const local = getAllAreas().find((a) => a.id === id);
+  if (local) return local;
+
+  // Fall back to server-scanned watchlist sites.
+  const server = serverAreas.find((a) => a.areaId === id);
+  if (!server) return undefined;
+  return {
+    id: server.areaId,
+    name: server.areaName,
+    region: server.region,
+    latitude: server.latitude,
+    longitude: server.longitude,
+    radiusKm: server.radiusKm,
+    demonstration: false,
+    createdAt: server.lastScanAt,
+    series: [],
+    description:
+      `Global watchlist site. Scanned daily by the server. Last known risk: ${server.lastRiskLevel.toUpperCase()}.`,
+  };
 }
 
 export function addUserArea(area: MonitoringArea): void {
@@ -84,4 +102,41 @@ export function removeUserArea(id: string): void {
 
 export function newAreaId(): string {
   return `area-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/* ============================================================================
+ * Server-scanned watchlist cache
+ * ---------------------------------------------------------------------------
+ * The daily cron scans 40 global rangeland sites and exposes their last-known
+ * state at /api/state. Those sites are real monitoring areas too. This module
+ * caches the latest server state so getAreaById() can return them by ID, and so
+ * every page that uses getAllAreas() can display them.
+ * ========================================================================== */
+
+import type { RiskLevel } from '../types';
+
+export interface ServerAreaLite {
+  areaId: string;
+  areaName: string;
+  region?: string;
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+  lastRiskLevel: RiskLevel;
+  lastScanAt: string;
+  lastAlertAt?: string;
+}
+
+let serverAreas: ServerAreaLite[] = [];
+
+export function setServerAreas(areas: ServerAreaLite[]): void {
+  serverAreas = areas;
+}
+
+export function getServerAreas(): ServerAreaLite[] {
+  return serverAreas;
+}
+
+export function getServerAreaById(id: string): ServerAreaLite | undefined {
+  return serverAreas.find((a) => a.areaId === id);
 }

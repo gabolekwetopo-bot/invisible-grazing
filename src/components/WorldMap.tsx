@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import type { MonitoringArea, RiskAssessment } from '../types';
@@ -136,19 +136,35 @@ export default function WorldMap({
           const color = RISK_COLORS[risk.level];
           const isDemo = area.demonstration;
           return (
-            <CircleMarker
-              key={area.id}
-              center={[area.latitude, area.longitude]}
-              radius={isDemo ? 8 : 10}
+            <React.Fragment key={area.id}>
+              {blip && (
+                <CircleMarker
+                  center={[area.latitude, area.longitude]}
+                  radius={risk.level === 'high' ? 20 : 16}
+                  pathOptions={{
+                    color,
+                    fillColor: color,
+                    fillOpacity: 0,
+                    weight: 0,
+                  }}
+                >
+                  <animate
+                    attributeName="opacity"
+                    values="0.9;0;0.9"
+                    dur="2.4s"
+                    repeatCount="indefinite"
+                  />
+                </CircleMarker>
+              )}
+              <CircleMarker
+                center={[area.latitude, area.longitude]}
+                radius={isDemo ? 8 : 10}
               pathOptions={{
                 color,
                 fillColor: color,
                 fillOpacity: isDemo ? 0.85 : 1,
                 weight: 2,
                 dashArray: isDemo ? '4 3' : undefined,
-                className: blip
-                  ? (risk.level === 'high' ? 'ig-blip ig-blip-halo' : 'ig-blip')
-                  : undefined,
               }}
               eventHandlers={{ click: () => onSelect?.(area.id) }}
             >
@@ -172,6 +188,7 @@ export default function WorldMap({
                 </div>
               </Popup>
             </CircleMarker>
+            </React.Fragment>
           );
         })}
       </MapContainer>
