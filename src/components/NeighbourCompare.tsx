@@ -1,4 +1,4 @@
-﻿// =============================================================================
+// =============================================================================
 // INVISIBLE GRAZING — Neighbour comparison
 // =============================================================================
 // Side-by-side NDVI comparison of the selected area against the nearest
@@ -7,6 +7,7 @@
 // =============================================================================
 
 import { useMemo } from 'react';
+import { useAreaSeries } from '../lib/useAreaSeries';
 import { Link } from 'react-router-dom';
 import { X, ArrowRight } from 'lucide-react';
 import type { MonitoringArea, RiskAssessment } from '../types';
@@ -84,33 +85,9 @@ export default function NeighbourCompare({ area, onClose }: Props) {
           <TimeSeriesChart ndvi={ndvi} height={220} />
         </div>
 
-        {neighbours.map((n) => {
-          const nNdvi = n.area.series.find((s) => s.indicator === 'NDVI');
-          return (
-            <div className="compare-cell" key={n.area.id}>
-              <header className="compare-cell-head">
-                <div>
-                  <div className="compare-cell-name">{n.area.name}</div>
-                  <div className="compare-cell-meta">
-                    {formatLatLon(n.area.latitude, n.area.longitude)} ·{' '}
-                    {n.distanceKm.toFixed(0)} km away
-                  </div>
-                </div>
-                <RiskBadge level={n.risk.level} />
-              </header>
-              {nNdvi ? (
-                <TimeSeriesChart ndvi={nNdvi} height={220} />
-              ) : (
-                <div className="compare-empty">
-                  No NDVI observations yet for this area.
-                </div>
-              )}
-              <Link to={`/area/${n.area.id}`} className="compare-cell-link">
-                Open investigation <ArrowRight size={12} />
-              </Link>
-            </div>
-          );
-        })}
+        {neighbours.map((n) => (
+          <NeighbourCell key={n.area.id} neighbour={n} />
+        ))}
 
         {neighbours.length === 0 && (
           <div className="compare-cell compare-none">
@@ -120,5 +97,49 @@ export default function NeighbourCompare({ area, onClose }: Props) {
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * One neighbour panel. If the neighbour already carries a series it renders
+ * immediately. If it does not, useAreaSeries queues a fetch from Sentinel-2 and
+ * NASA POWER and the chart renders as soon as the response arrives.
+ */
+function NeighbourCell({ neighbour }: { neighbour: Compared }) {
+  const { hydrated, loading, empty } = useAreaSeries(neighbour.area, true);
+  const display = hydrated ?? neighbour.area;
+  const ndvi = display.series.find((s: { indicator: string }) => s.indicator === 'NDVI');
+
+  return (
+    <div className="compare-cell">
+      <header className="compare-cell-head">
+        <div>
+          <div className="compare-cell-name">{display.name}</div>
+          <div className="compare-cell-meta">
+            {formatLatLon(display.latitude, display.longitude)} ·{' '}
+            {neighbour.distanceKm.toFixed(0)} km away
+          </div>
+        </div>
+        <RiskBadge level={neighbour.risk.level} />
+      </header>
+      {ndvi ? (
+        <TimeSeriesChart ndvi={ndvi} height={220} />
+      ) : loading ? (
+        <div className="compare-empty compare-loading">
+          <span className="compare-spinner" />
+          Fetching observations from Sentinel-2…
+        </div>
+      ) : empty ? (
+        <div className="compare-empty">
+          The source returned no clear observations for this coordinate in the
+          observation window.
+        </div>
+      ) : (
+        <div className="compare-empty">Loading…</div>
+      )}
+      <Link to={`/area/${display.id}`} className="compare-cell-link">
+        Open investigation <ArrowRight size={12} />
+      </Link>
+    </div>
   );
 }

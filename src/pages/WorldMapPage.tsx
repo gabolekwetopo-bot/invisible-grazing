@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, X } from 'lucide-react';
 import { getAllAreas, addUserArea, getServerRiskFor } from '../lib/areas';
+import { useAreaSeries } from '../lib/useAreaSeries';
 import { assessArea } from '../lib/risk';
 import WorldMap, { type MapPoint } from '../components/WorldMap';
 import AddAreaModal from '../components/AddAreaModal';
@@ -66,6 +67,8 @@ export default function WorldMapPage() {
         </p>
       </header>
 
+      <MapSeriesHydrator areas={areas} />
+
       <div className="map-toolbar card">
         <button
           className={'map-chip map-chip-add' + (pickMode ? ' is-active' : '')}
@@ -115,4 +118,22 @@ export default function WorldMapPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Quietly hydrates series for every area shown on the map page. Renders
+ * nothing. The fetched series are cached, and reopening the map will use them.
+ */
+function MapSeriesHydrator({ areas }: { areas: ReturnType<typeof getAllAreas> }) {
+  return (
+    <>
+      {areas.map((a) => (
+        <MapHydrateOne key={a.id} area={a} />
+      ))}
+    </>
+  );
+}
+function MapHydrateOne({ area }: { area: ReturnType<typeof getAllAreas>[number] }) {
+  useAreaSeries(area, true);
+  return null;
 }

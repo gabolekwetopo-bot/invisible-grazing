@@ -9,12 +9,34 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CircleCheckBig, CircleHelp, TrendingDown, Globe2, Activity } from 'lucide-react';
 import { getAllAreas, getServerRiskFor } from '../lib/areas';
+import { useAreaSeries } from '../lib/useAreaSeries';
 import { assessArea, deriveAlert } from '../lib/risk';
 import { formatDate } from '../lib/format';
 import RiskBadge from '../components/RiskBadge';
 import WorldMap, { type MapPoint } from '../components/WorldMap';
 import './Dashboard.css';
 
+
+/**
+ * Mounts a hidden hydrator for every area on the dashboard. Each area that has
+ * no series triggers a queued fetch from Sentinel-2 and NASA POWER. Nothing is
+ * rendered; the fetched series land in localStorage and the next render (after
+ * a state bump) uses them.
+ */
+function SeriesHydrator({ areas }: { areas: { id: string; name: string; latitude: number; longitude: number; radiusKm?: number; region?: string; countryCode?: string; demonstration: boolean; createdAt: string; series: unknown[] }[] }) {
+  return (
+    <>
+      {areas.map((a) => (
+        <HydrateOne key={a.id} area={a as Parameters<typeof useAreaSeries>[0]} />
+      ))}
+    </>
+  );
+}
+
+function HydrateOne({ area }: { area: Parameters<typeof useAreaSeries>[0] }) {
+  useAreaSeries(area, true);
+  return null;
+}
 export default function Dashboard() {
   const areas = getAllAreas();
 
@@ -106,6 +128,8 @@ export default function Dashboard() {
           and highlight areas that may require grazing-pressure investigation.
         </p>
       </header>
+
+      <SeriesHydrator areas={areas} />
 
       <section className="metric-grid" aria-label="Key metrics">
         <MetricCard

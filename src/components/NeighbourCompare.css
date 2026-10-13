@@ -62,3 +62,22 @@
   font-size: 0.8125rem; color: var(--ig-text-muted);
   padding: var(--ig-space-4); text-align: center;
 }
+
+.compare-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ig-text-muted);
+}
+.compare-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--ig-border-strong);
+  border-top-color: var(--ig-forest);
+  animation: compareSpin 0.8s linear infinite;
+  display: inline-block;
+}
+@keyframes compareSpin {
+  to { transform: rotate(360deg); }
+}
