@@ -13,7 +13,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Info } from 'lucide-react';
-import { getAreaById } from '../lib/areas';
+import { getAreaById, setServerAreas } from '../lib/areas';
+import { useServerState } from '../lib/serverState';
 import { assessArea } from '../lib/risk';
 import { DATA_SOURCES } from '../lib/sources';
 import { fetchSentinel2Ndvi } from '../lib/providers/sentinel2';
@@ -30,6 +31,28 @@ import './AreaInvestigation.css';
 export default function AreaInvestigation() {
   const { id } = useParams<{ id: string }>();
   const area = id ? getAreaById(id) : undefined;
+
+  // The area might be a server-scanned watchlist site whose data has not yet
+  // arrived. useServerState fetches it; when the fetch completes we push the
+  // sites into the areas cache so getAreaById can find them.
+  const { state: serverState, loading: serverLoading } = useServerState();
+  useEffect(() => {
+    if (serverState.areas.length) {
+      setServerAreas(
+        serverState.areas.map((a: { areaId: string; areaName: string; region?: string; latitude: number; longitude: number; radiusKm: number; lastRiskLevel: import('../types').RiskLevel; lastScanAt: string; lastAlertAt?: string }) => ({
+          areaId: a.areaId,
+          areaName: a.areaName,
+          region: a.region,
+          latitude: a.latitude,
+          longitude: a.longitude,
+          radiusKm: a.radiusKm,
+          lastRiskLevel: a.lastRiskLevel,
+          lastScanAt: a.lastScanAt,
+          lastAlertAt: a.lastAlertAt,
+        })),
+      );
+    }
+  }, [serverState]);
 
   const [hydratedArea, setHydratedArea] = useState<MonitoringArea | null>(null);
   const [hydrating, setHydrating] = useState(false);
@@ -110,6 +133,28 @@ export default function AreaInvestigation() {
   const risk = useMemo(() => (displayArea ? assessArea(displayArea) : null), [displayArea]);
 
   if (!displayArea || !risk) {
+    // If the server state has not arrived yet, the id might be a watchlist site.
+    // Show a loading state instead of a false "not found".
+    if (serverLoading || (serverState.areas.length === 0 && !serverLoading && !id?.startsWith('wl-') && !id?.startsWith('seed-'))) {
+      return (
+        <div className="ig-container area-page">
+          <div className="area-hydrating">
+            <div className="area-hydrating-spinner" />
+            Loading monitoring area…
+          </div>
+        </div>
+      );
+    }
+    if (serverLoading) {
+      return (
+        <div className="ig-container area-page">
+          <div className="area-hydrating">
+            <div className="area-hydrating-spinner" />
+            Loading monitoring area…
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="ig-container area-page">
         <h1>Area not found</h1>
