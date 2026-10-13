@@ -1,0 +1,93 @@
+﻿.ai-card {
+  background: var(--ig-surface);
+  border: 1px solid var(--ig-border);
+  border-radius: var(--ig-radius-lg);
+  padding: var(--ig-space-5);
+  box-shadow: var(--ig-shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ig-space-3);
+}
+
+.ai-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ig-space-3);
+}
+.ai-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ig-forest);
+}
+.ai-card-model {
+  font-size: 0.6875rem;
+  color: var(--ig-text-soft);
+  font-family: var(--ig-font-mono);
+}
+
+.ai-card-intro {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ig-text-muted);
+  line-height: 1.55;
+  max-width: 720px;
+}
+
+.ai-note {
+  margin: 0;
+  padding: var(--ig-space-4) var(--ig-space-5);
+  background: var(--ig-sand-light);
+  border-left: 3px solid var(--ig-forest);
+  border-radius: var(--ig-radius);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--ig-text);
+  font-style: normal;
+}
+.ai-note p { margin: 0 0 0.6em 0; }
+.ai-note p:last-child { margin-bottom: 0; }
+
+.ai-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--ig-risk-high-bg);
+  color: var(--ig-risk-high);
+  border-radius: var(--ig-radius);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.ai-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ig-space-3);
+  flex-wrap: wrap;
+}
+.ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: var(--ig-radius);
+  background: var(--ig-forest);
+  color: #fff;
+  border: 1px solid var(--ig-forest);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.ai-btn:hover:not(:disabled) { background: var(--ig-forest-dark); }
+.ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ai-spin { animation: aiSpin 0.9s linear infinite; }
+@keyframes aiSpin { to { transform: rotate(360deg); } }
+
+.ai-disclaimer {
+  font-size: 0.6875rem;
+  color: var(--ig-text-soft);
+}

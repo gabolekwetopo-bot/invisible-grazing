@@ -1,4 +1,4 @@
-﻿// =============================================================================
+// =============================================================================
 // INVISIBLE GRAZING — Recommended next steps, as working actions
 // =============================================================================
 // Each recommendation is a button that performs a real action on the page:
@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { GitCompare, Droplets, Printer, Loader2 } from 'lucide-react';
+import { GitCompare, Droplets, Printer, Loader2, Sparkles } from 'lucide-react';
 import type { MonitoringArea, RiskAssessment } from '../types';
 import './ActionPanel.css';
 
@@ -70,10 +70,20 @@ export default function ActionPanel({ area, risk, onCompare, onReviewRainfall }:
       disabled: !hasRain,
     },
     {
-      id: 'report',
-      label: 'Open full printable report',
+      id: 'ai-report',
+      label: 'Full AI report (printable)',
       detail:
-        'Generate a single-page report with location, observation period, evidence, and data provenance.',
+        'Generate a structured report covering vegetation change, rainfall context, possible causes to investigate, and recommended field verification. Print-ready.',
+      icon: Sparkles,
+      to: `/area/${area.id}/report?ai=1`,
+      state: 'idle' as ActionState,
+      disabled: false,
+    },
+    {
+      id: 'report',
+      label: 'Open printable report (data only)',
+      detail:
+        'Single-page report with location, observation period, evidence, and data provenance. No AI narrative.',
       icon: Printer,
       to: `/area/${area.id}/report`,
       state: 'idle' as ActionState,

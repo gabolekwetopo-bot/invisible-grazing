@@ -102,3 +102,54 @@
   .report-section { page-break-inside: avoid; }
   body { background: #fff !important; }
 }
+
+/* ---------- AI analyst report section ---------- */
+.report-ai-body {
+  background: var(--ig-sand-light);
+  border-left: 3px solid var(--ig-forest);
+  border-radius: var(--ig-radius);
+  padding: var(--ig-space-4) var(--ig-space-5);
+}
+.report-ai-attribution {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.6875rem; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--ig-forest);
+  margin-bottom: var(--ig-space-3);
+}
+.report-ai-h3 {
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ig-forest);
+  margin: var(--ig-space-4) 0 var(--ig-space-2);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--ig-border);
+}
+.report-ai-h3:first-of-type { margin-top: 0; }
+.report-ai-p {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  margin: 0 0 0.7em 0;
+  color: var(--ig-text);
+}
+.report-ai-loading {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.875rem; color: var(--ig-text-muted);
+  padding: var(--ig-space-4);
+  background: var(--ig-sand-light);
+  border-radius: var(--ig-radius);
+}
+.report-ai-spin { animation: reportAiSpin 0.9s linear infinite; }
+@keyframes reportAiSpin { to { transform: rotate(360deg); } }
+.report-ai-error {
+  font-size: 0.8125rem;
+  color: var(--ig-text-muted);
+  padding: var(--ig-space-3) var(--ig-space-4);
+  background: var(--ig-sand-light);
+  border-radius: var(--ig-radius);
+}
+
+@media print {
+  .report-ai-body { background: #f6f3ec !important; }
+}

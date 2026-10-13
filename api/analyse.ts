@@ -1,11 +1,12 @@
 ﻿// =============================================================================
-// POST /api/analyse  — AI analyst note for a monitoring area
+// POST /api/analyse  — AI analyst note or full report
 // =============================================================================
-// Receives only observed numbers and produces a short, cited analyst note.
-// The model is instructed to never invent values, never claim overgrazing, and
-// never describe anything that is not present in the supplied evidence.
+// mode: 'note'   → three sentences, concise reading of the evidence
+// mode: 'report' → structured four-section report suitable for printing
 //
-// Model: openai/gpt-oss-120b on Groq (Apache-2.0 open weights).
+// The model only ever sees the real numbers supplied in the request. It is
+// forbidden from inventing values, claiming overgrazing, or claiming confirmed
+// grazing. Output is text only; no markdown, no headings.
 // =============================================================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -13,6 +14,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 export const config = { maxDuration: 30 };
 
 interface AnalyseRequest {
+  mode?: 'note' | 'report';
   areaName?: string;
   region?: string;
   countryCode?: string;
@@ -41,9 +43,48 @@ interface AnalyseRequest {
   alternativeExplanations?: string[];
 }
 
-function buildPrompt(body: AnalyseRequest): string {
+function evidenceBlock(body: AnalyseRequest): string[] {
   const lines: string[] = [];
+  lines.push(`- Area name: ${body.areaName ?? 'Unnamed'}`);
+  if (body.region || body.countryCode) {
+    lines.push(`- Location: ${[body.region, body.countryCode].filter(Boolean).join(', ')}`);
+  }
+  lines.push(`- Coordinates: ${body.latitude.toFixed(4)}, ${body.longitude.toFixed(4)}`);
+  if (body.radiusKm) lines.push(`- Radius: ${body.radiusKm} km`);
+  lines.push('');
+  lines.push(`Risk classification: ${body.riskLevel}`);
+  lines.push(`Risk headline: ${body.riskHeadline}`);
+  lines.push('Evidence items:');
+  for (const e of body.evidence ?? []) lines.push(`- ${e.label}: ${e.value} (${e.direction})`);
+  if (body.ndvi) {
+    lines.push('');
+    lines.push('NDVI observations from Sentinel-2:');
+    lines.push(`- Observation count: ${body.ndvi.observationCount}`);
+    if (body.ndvi.earliestDate) lines.push(`- Earliest: ${body.ndvi.earliestDate}`);
+    if (body.ndvi.latestDate) lines.push(`- Latest: ${body.ndvi.latestDate}`);
+    if (body.ndvi.latestValue != null) lines.push(`- Latest value: ${body.ndvi.latestValue}`);
+    if (body.ndvi.baselineMean != null) lines.push(`- Baseline mean: ${body.ndvi.baselineMean}`);
+    if (body.ndvi.recentMean != null) lines.push(`- Recent mean: ${body.ndvi.recentMean}`);
+    if (body.ndvi.delta != null) lines.push(`- Change: ${body.ndvi.delta}`);
+  }
+  if (body.rainfall) {
+    lines.push('');
+    lines.push('Rainfall from NASA POWER:');
+    lines.push(`- Observation count: ${body.rainfall.observationCount}`);
+    if (body.rainfall.baselineMean != null) lines.push(`- Baseline mean: ${body.rainfall.baselineMean} mm`);
+    if (body.rainfall.recentMean != null) lines.push(`- Recent mean: ${body.rainfall.recentMean} mm`);
+    if (body.rainfall.percentChange != null) lines.push(`- Change: ${body.rainfall.percentChange}%`);
+  }
+  if (body.alternativeExplanations?.length) {
+    lines.push('');
+    lines.push('Alternative explanations already noted by the system:');
+    for (const a of body.alternativeExplanations) lines.push(`- ${a}`);
+  }
+  return lines;
+}
 
+function buildNotePrompt(body: AnalyseRequest): string {
+  const lines: string[] = [];
   lines.push('You are an environmental analyst for a satellite-based rangeland monitoring system.');
   lines.push('');
   lines.push('Write a short analyst note in exactly three sentences, using plain English.');
@@ -60,49 +101,39 @@ function buildPrompt(body: AnalyseRequest): string {
   lines.push('- Do not include headings, bullet points, or markdown.');
   lines.push('');
   lines.push('Observed facts:');
-  lines.push(`- Area name: ${body.areaName ?? 'Unnamed'}`);
-  if (body.region || body.countryCode) {
-    lines.push(`- Location: ${[body.region, body.countryCode].filter(Boolean).join(', ')}`);
-  }
-  lines.push(`- Coordinates: ${body.latitude.toFixed(4)}, ${body.longitude.toFixed(4)}`);
-  if (body.radiusKm) lines.push(`- Radius: ${body.radiusKm} km`);
-  if (body.demonstration) lines.push('- NOTE: This area uses demonstration (simulated) data.');
+  lines.push(...evidenceBlock(body));
+  return lines.join('\n');
+}
 
+function buildReportPrompt(body: AnalyseRequest): string {
+  const lines: string[] = [];
+  lines.push('You are an environmental analyst for a satellite-based rangeland monitoring system.');
   lines.push('');
-  lines.push(`Risk classification: ${body.riskLevel}`);
-  lines.push(`Risk headline: ${body.riskHeadline}`);
-  lines.push('Evidence items:');
-  for (const e of body.evidence) {
-    lines.push(`- ${e.label}: ${e.value} (${e.direction})`);
-  }
-
-  if (body.ndvi) {
-    lines.push('');
-    lines.push('NDVI observations from Sentinel-2:');
-    lines.push(`- Observation count: ${body.ndvi.observationCount}`);
-    if (body.ndvi.earliestDate) lines.push(`- Earliest: ${body.ndvi.earliestDate}`);
-    if (body.ndvi.latestDate) lines.push(`- Latest: ${body.ndvi.latestDate}`);
-    if (body.ndvi.latestValue != null) lines.push(`- Latest value: ${body.ndvi.latestValue}`);
-    if (body.ndvi.baselineMean != null) lines.push(`- Baseline mean: ${body.ndvi.baselineMean}`);
-    if (body.ndvi.recentMean != null) lines.push(`- Recent mean: ${body.ndvi.recentMean}`);
-    if (body.ndvi.delta != null) lines.push(`- Change: ${body.ndvi.delta}`);
-  }
-
-  if (body.rainfall) {
-    lines.push('');
-    lines.push('Rainfall from NASA POWER:');
-    lines.push(`- Observation count: ${body.rainfall.observationCount}`);
-    if (body.rainfall.baselineMean != null) lines.push(`- Baseline mean: ${body.rainfall.baselineMean} mm`);
-    if (body.rainfall.recentMean != null) lines.push(`- Recent mean: ${body.rainfall.recentMean} mm`);
-    if (body.rainfall.percentChange != null) lines.push(`- Change: ${body.rainfall.percentChange}%`);
-  }
-
-  if (body.alternativeExplanations && body.alternativeExplanations.length) {
-    lines.push('');
-    lines.push('Alternative explanations already noted by the system:');
-    for (const a of body.alternativeExplanations) lines.push(`- ${a}`);
-  }
-
+  lines.push('Write a structured monitoring report in exactly four sections.');
+  lines.push('Each section must begin on its own line with a plain-text heading, then its content.');
+  lines.push('');
+  lines.push('Section 1 — OBSERVED VEGETATION CHANGE');
+  lines.push('Describe the NDVI numbers, the observation period, and what the change represents.');
+  lines.push('Section 2 — RAINFALL CONTEXT');
+  lines.push('Describe the rainfall numbers and whether they plausibly explain the vegetation change.');
+  lines.push('Section 3 — POSSIBLE CAUSES TO INVESTIGATE');
+  lines.push('List candidate causes drawn only from the evidence: drought, fire, land-use change, cultivation, pests, seasonal phenology, grazing pressure.');
+  lines.push('Phrase them as candidates to check on the ground, not as findings.');
+  lines.push('Section 4 — RECOMMENDED FIELD VERIFICATION');
+  lines.push('Give concrete field actions: what to inspect, what to record, whom to contact, and which records to request.');
+  lines.push('');
+  lines.push('Hard rules — do not break these:');
+  lines.push('- Never invent or estimate any value. Use only the numbers below.');
+  lines.push('- Never claim the area is overgrazed.');
+  lines.push('- Never claim to confirm grazing activity.');
+  lines.push('- Never claim biodiversity, species, carrying capacity, or carbon outcomes.');
+  lines.push('- If evidence is limited, say so plainly in Section 1.');
+  lines.push('- Do not use markdown, bullet symbols, or asterisks.');
+  lines.push('- Write in continuous prose under each heading.');
+  lines.push('- Aim for around 250 to 400 words total.');
+  lines.push('');
+  lines.push('Observed facts:');
+  lines.push(...evidenceBlock(body));
   return lines.join('\n');
 }
 
@@ -124,7 +155,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const prompt = buildPrompt(body);
+  const mode = body.mode ?? 'note';
+  const prompt = mode === 'report' ? buildReportPrompt(body) : buildNotePrompt(body);
+  const maxTokens = mode === 'report' ? 1600 : 800;
 
   try {
     const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -136,11 +169,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: 'openai/gpt-oss-120b',
         messages: [
-          { role: 'system', content: 'You are a careful environmental analyst. Follow the rules exactly. Reply with only the three sentences, no preamble.' },
+          {
+            role: 'system',
+            content:
+              mode === 'report'
+                ? 'You are a careful environmental analyst. Follow the rules exactly. Reply with the four-section report only, no preamble.'
+                : 'You are a careful environmental analyst. Follow the rules exactly. Reply with only the three sentences, no preamble.',
+          },
           { role: 'user', content: prompt },
         ],
         temperature: 0.3,
-        max_tokens: 800,
+        max_tokens: maxTokens,
       }),
     });
 
@@ -153,13 +192,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const json = (await upstream.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
-    const note = json.choices?.[0]?.message?.content?.trim() ?? '';
-    if (!note) {
+    const text = json.choices?.[0]?.message?.content?.trim() ?? '';
+    if (!text) {
       res.status(502).json({ error: 'Groq returned an empty response.' });
       return;
     }
 
-    res.status(200).json({ note });
+    res.status(200).json({ note: text, mode });
   } catch (err) {
     res.status(502).json({ error: String(err) });
   }

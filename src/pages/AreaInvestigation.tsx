@@ -17,6 +17,7 @@ import RiskBadge from '../components/RiskBadge';
 import TimeSeriesChart from '../components/TimeSeriesChart';
 import ActionPanel from '../components/ActionPanel';
 import NeighbourCompare from '../components/NeighbourCompare';
+import AIAnalyst from '../components/AIAnalyst';
 import './AreaInvestigation.css';
 
 export default function AreaInvestigation() {
@@ -141,6 +142,8 @@ export default function AreaInvestigation() {
           <NeighbourCompare area={area} onClose={() => setShowCompare(false)} />
         </div>
       )}
+
+      <AIAnalyst area={area} risk={risk} />
 
       <section className="card area-block">
         <div className="card-head">

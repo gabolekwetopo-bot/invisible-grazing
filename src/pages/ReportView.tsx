@@ -1,4 +1,4 @@
-﻿// =============================================================================
+// =============================================================================
 // INVISIBLE GRAZING — Full printable report
 // =============================================================================
 // Single-page report for a monitoring area: location, observation period,
@@ -7,9 +7,9 @@
 // Uses a print stylesheet so Ctrl+P produces a clean document.
 // =============================================================================
 
-import { useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Printer, Download } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Printer, Download, Sparkles, Loader2 } from 'lucide-react';
 import { getAreaById } from '../lib/areas';
 import { assessArea } from '../lib/risk';
 import { DATA_SOURCES } from '../lib/sources';
@@ -19,7 +19,121 @@ import './ReportView.css';
 
 export default function ReportView() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const wantsAI = searchParams.get('ai') === '1';
   const area = id ? getAreaById(id) : undefined;
+
+  const [aiReport, setAiReport] = useState<string>('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string>('');
+
+  // Build a stable payload from the area and its assessment once.
+  const aiPayload = useMemo(() => {
+    if (!area) return null;
+    const risk = assessArea(area);
+    const ndvi = area.series.find((s) => s.indicator === 'NDVI');
+    const rainfall = area.series.find((s) => s.indicator === 'Rainfall');
+    const usableNdvi = ndvi?.observations.filter((o) => o.value != null) ?? [];
+    const usableRain = rainfall?.observations.filter((o) => o.value != null) ?? [];
+
+    function mean(xs: number[]) {
+      return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+    }
+    function split(xs: { date: string; value: number | null }[]) {
+      if (!xs.length) return { recent: [] as typeof xs, baseline: [] as typeof xs };
+      const sorted = [...xs].sort((a, b) => a.date.localeCompare(b.date));
+      const latest = new Date(sorted[sorted.length - 1].date);
+      const cutoff = new Date(latest);
+      cutoff.setMonth(cutoff.getMonth() - 12);
+      return {
+        recent: sorted.filter((o) => new Date(o.date) >= cutoff),
+        baseline: sorted.filter((o) => new Date(o.date) < cutoff),
+      };
+    }
+
+    const ndviSplit = split(usableNdvi as { date: string; value: number | null }[]);
+    const rainSplit = split(usableRain as { date: string; value: number | null }[]);
+    const ndviVals = usableNdvi.map((o) => o.value as number);
+    const recentNdvi = ndviSplit.recent.map((o) => o.value as number);
+    const baseNdvi = ndviSplit.baseline.map((o) => o.value as number);
+    const recentRain = rainSplit.recent.map((o) => o.value as number);
+    const baseRain = rainSplit.baseline.map((o) => o.value as number);
+
+    const recentNdviMean = mean(recentNdvi);
+    const baseNdviMean = mean(baseNdvi);
+    const recentRainMean = mean(recentRain);
+    const baseRainMean = mean(baseRain);
+
+    const sortedNdvi = [...usableNdvi].sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      mode: 'report',
+      areaName: area.name,
+      region: area.region,
+      countryCode: area.countryCode,
+      latitude: area.latitude,
+      longitude: area.longitude,
+      radiusKm: area.radiusKm,
+      demonstration: false,
+      riskLevel: risk.level,
+      riskHeadline: risk.headline,
+      evidence: risk.evidence.map((e) => ({ label: e.label, value: e.value, direction: e.direction })),
+      ndvi: ndvi
+        ? {
+            latestDate: sortedNdvi[sortedNdvi.length - 1]?.date,
+            latestValue: sortedNdvi[sortedNdvi.length - 1]?.value,
+            baselineMean: baseNdviMean != null ? Number(baseNdviMean.toFixed(3)) : null,
+            recentMean: recentNdviMean != null ? Number(recentNdviMean.toFixed(3)) : null,
+            delta:
+              recentNdviMean != null && baseNdviMean != null
+                ? Number((recentNdviMean - baseNdviMean).toFixed(3))
+                : null,
+            observationCount: ndviVals.length,
+            earliestDate: sortedNdvi[0]?.date,
+          }
+        : undefined,
+      rainfall: rainfall
+        ? {
+            recentMean: recentRainMean != null ? Number(recentRainMean.toFixed(1)) : null,
+            baselineMean: baseRainMean != null ? Number(baseRainMean.toFixed(1)) : null,
+            percentChange:
+              recentRainMean != null && baseRainMean != null && baseRainMean !== 0
+                ? Number((((recentRainMean - baseRainMean) / baseRainMean) * 100).toFixed(0))
+                : null,
+            observationCount: usableRain.length,
+          }
+        : undefined,
+      alternativeExplanations: risk.alternativeExplanations,
+    };
+  }, [area]);
+
+  useEffect(() => {
+    if (!wantsAI || !aiPayload) return;
+    let cancelled = false;
+    setAiLoading(true);
+    setAiError('');
+    fetch('/api/analyse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(aiPayload),
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const json = (await r.json()) as { note?: string };
+        const text = (json.note ?? '').trim();
+        if (!text) throw new Error('Empty response');
+        if (!cancelled) { setAiReport(text); setAiLoading(false); }
+      })
+      .catch((e) => {
+        if (!cancelled) { setAiError(String(e).replace(/^Error:\s*/, '')); setAiLoading(false); }
+      })
+      .finally(() => {
+        if (!cancelled) setAiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [wantsAI, aiPayload]);
 
   // Auto-scroll to top when the report opens.
   useEffect(() => {
@@ -187,6 +301,39 @@ export default function ReportView() {
             ))}
           </ul>
         </section>
+
+        {(aiLoading || aiReport || aiError) && (
+          <section className="report-section report-ai">
+            <h2>AI analyst report</h2>
+            {aiLoading && !aiReport && (
+              <div className="report-ai-loading">
+                <Loader2 size={14} className="report-ai-spin" /> Generating structured report…
+              </div>
+            )}
+            {aiReport && (
+              <div className="report-ai-body">
+                <div className="report-ai-attribution">
+                  <Sparkles size={12} /> Generated by openai/gpt-oss-120b · Uses only the observed values above
+                </div>
+                {aiReport.split(/\n+/).map((line, i) => {
+                  const trimmed = line.trim();
+                  if (!trimmed) return null;
+                  const isHeading = /^(Section\s*\d|OBSERVED|RAINFALL|POSSIBLE|RECOMMENDED)/i.test(trimmed);
+                  return isHeading ? (
+                    <h3 key={i} className="report-ai-h3">{trimmed}</h3>
+                  ) : (
+                    <p key={i} className="report-ai-p">{trimmed}</p>
+                  );
+                })}
+              </div>
+            )}
+            {aiError && (
+              <div className="report-ai-error">
+                The AI section is unavailable for this report. The rest of the report is unaffected.
+              </div>
+            )}
+          </section>
+        )}
 
         <section className="report-section report-notes">
           <h2>Notes on interpretation</h2>
