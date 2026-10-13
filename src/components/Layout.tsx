@@ -19,7 +19,7 @@ export default function Layout() {
       <header className="ig-header">
         <div className="ig-header-inner">
           <NavLink to="/" className="ig-brand">
-            <div className="ig-brand-mark" aria-hidden="true">IG</div>
+            <img src="/logo.svg" alt="" className="ig-brand-mark" aria-hidden="true" />
             <div className="ig-brand-text">
               <span className="ig-brand-name">INVISIBLE GRAZING</span>
               <span className="ig-brand-tag">See the pressure before the damage.</span>

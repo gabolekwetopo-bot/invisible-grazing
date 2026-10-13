@@ -1,0 +1,17 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="igGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2e5740"/>
+      <stop offset="1" stop-color="#142a1d"/>
+    </linearGradient>
+  </defs>
+  <rect width="40" height="40" rx="8" fill="url(#igGrad)"/>
+  <g stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none">
+    <path d="M7 14 L 33 14" opacity="0.35"/>
+    <path d="M7 18 L 33 18" opacity="0.55"/>
+    <path d="M7 22 C 12 18, 15 26, 20 22 S 28 18, 33 22" opacity="0.95"/>
+    <path d="M7 26 C 12 30, 15 22, 20 26 S 28 30, 33 26" opacity="0.7"/>
+    <path d="M7 30 L 33 30" opacity="0.4"/>
+  </g>
+  <circle cx="20" cy="22" r="2" fill="#8fc9a1"/>
+</svg>
