@@ -60,8 +60,49 @@ function getHydratedSeeds(): MonitoringArea[] {
 
 let userAreas: MonitoringArea[] = loadUserAreas();
 
+/**
+ * Returns every area the app knows about:
+ *   - user-created areas (localStorage)
+ *   - the four hydrated seed areas
+ *   - the server-scanned watchlist sites, which arrive from /api/state
+ *
+ * The server sites are synthesized as MonitoringArea objects with real
+ * coordinates and their last-known server classification. They carry no
+ * observation series in this list; that is fetched on demand when a user opens
+ * a specific site.
+ */
 export function getAllAreas(): MonitoringArea[] {
-  return [...userAreas, ...getHydratedSeeds()];
+  const seeds = getHydratedSeeds();
+  const server = serverAreas.map((s) => synthesizedServerArea(s));
+  // Avoid duplicate ids in case a site appears in both lists.
+  const seen = new Set<string>();
+  const merged: MonitoringArea[] = [];
+  for (const a of [...userAreas, ...seeds, ...server]) {
+    if (seen.has(a.id)) continue;
+    seen.add(a.id);
+    merged.push(a);
+  }
+  return merged;
+}
+
+/** Build (or reuse) a MonitoringArea for a server-scanned watchlist site. */
+function synthesizedServerArea(s: ServerAreaLite): MonitoringArea {
+  const cached = synthesizedServerAreas.get(s.areaId);
+  if (cached) return cached;
+  const area: MonitoringArea = {
+    id: s.areaId,
+    name: s.areaName,
+    region: s.region,
+    latitude: s.latitude,
+    longitude: s.longitude,
+    radiusKm: s.radiusKm,
+    demonstration: false,
+    createdAt: s.lastScanAt,
+    series: [],
+    description: `Global watchlist site. Scanned daily by the server. Last known risk: ${s.lastRiskLevel.toUpperCase()}.`,
+  };
+  synthesizedServerAreas.set(s.areaId, area);
+  return area;
 }
 
 export function getUserAreas(): MonitoringArea[] {
@@ -149,4 +190,23 @@ export function getServerAreas(): ServerAreaLite[] {
 
 export function getServerAreaById(id: string): ServerAreaLite | undefined {
   return serverAreas.find((a) => a.areaId === id);
+}
+
+/**
+ * If the given area is a server-scanned watchlist site, returns the risk level
+ * the server classified it at during the last daily scan. Returns undefined for
+ * user-created and seed areas, which are assessed locally.
+ */
+export function getServerRiskFor(areaId: string): {
+  level: 'low' | 'moderate' | 'high' | 'insufficient';
+  lastScanAt: string;
+  lastAlertAt?: string;
+} | undefined {
+  const hit = serverAreas.find((a) => a.areaId === areaId);
+  if (!hit) return undefined;
+  return {
+    level: hit.lastRiskLevel,
+    lastScanAt: hit.lastScanAt,
+    lastAlertAt: hit.lastAlertAt,
+  };
 }

@@ -8,7 +8,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CircleCheckBig, CircleHelp, TrendingDown, Globe2, Activity } from 'lucide-react';
-import { getAllAreas } from '../lib/areas';
+import { getAllAreas, getServerRiskFor } from '../lib/areas';
 import { assessArea, deriveAlert } from '../lib/risk';
 import { formatDate } from '../lib/format';
 import RiskBadge from '../components/RiskBadge';
@@ -18,10 +18,36 @@ import './Dashboard.css';
 export default function Dashboard() {
   const areas = getAllAreas();
 
+  // For server-scanned watchlist sites, use the classification the server
+  // computed from real satellite data at the last scan. For user-created and
+  // seed areas, run the local risk engine.
+  function riskFor(area: Parameters<typeof assessArea>[0]): ReturnType<typeof assessArea> {
+    const server = getServerRiskFor(area.id);
+    if (server) {
+      return {
+        level: server.level,
+        headline:
+          server.level === 'insufficient'
+            ? 'Insufficient observations for a reliable assessment.'
+            : server.level === 'high'
+            ? 'Severe vegetation decline detected at the last server scan.'
+            : server.level === 'moderate'
+            ? 'Material vegetation decline — investigate potential causes.'
+            : 'Vegetation appears broadly stable over the assessment window.',
+        evidence: [],
+        alternativeExplanations: [],
+        recommendedActions: [],
+        computedAt: server.lastScanAt,
+        basedOn: 'observations',
+      };
+    }
+    return assessArea(area);
+  }
+
   const points: MapPoint[] = useMemo(
     () =>
       areas.map((area) => {
-        const risk = assessArea(area);
+        const risk = riskFor(area);
         const ndvi = area.series.find((s) => s.indicator === 'NDVI');
         const usable = ndvi?.observations.filter((o) => o.value != null) ?? [];
         const latest = usable.length

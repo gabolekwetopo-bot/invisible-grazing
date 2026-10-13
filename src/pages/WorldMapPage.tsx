@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, X } from 'lucide-react';
-import { getAllAreas, addUserArea } from '../lib/areas';
+import { getAllAreas, addUserArea, getServerRiskFor } from '../lib/areas';
 import { assessArea } from '../lib/risk';
 import WorldMap, { type MapPoint } from '../components/WorldMap';
 import AddAreaModal from '../components/AddAreaModal';
@@ -19,7 +19,25 @@ export default function WorldMapPage() {
   const allPoints: MapPoint[] = useMemo(
     () =>
       areas.map((area) => {
-        const risk = assessArea(area);
+        const server = getServerRiskFor(area.id);
+        const risk = server
+          ? {
+              level: server.level,
+              headline:
+                server.level === 'insufficient'
+                  ? 'Insufficient observations for a reliable assessment.'
+                  : server.level === 'high'
+                  ? 'Severe vegetation decline detected at the last server scan.'
+                  : server.level === 'moderate'
+                  ? 'Material vegetation decline — investigate potential causes.'
+                  : 'Vegetation appears broadly stable over the assessment window.',
+              evidence: [],
+              alternativeExplanations: [],
+              recommendedActions: [],
+              computedAt: server.lastScanAt,
+              basedOn: 'observations' as const,
+            }
+          : assessArea(area);
         const ndvi = area.series.find((s) => s.indicator === 'NDVI');
         const usable = ndvi?.observations.filter((o) => o.value != null) ?? [];
         const latest = usable.length ? usable.reduce((a, b) => (a.date > b.date ? a : b)) : undefined;
