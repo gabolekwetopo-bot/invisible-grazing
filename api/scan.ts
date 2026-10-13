@@ -1,4 +1,4 @@
-﻿// =============================================================================
+// =============================================================================
 // GET /api/scan — daily scheduled scan (global watchlist)
 // =============================================================================
 // Scans the four seed areas plus 40 real rangeland sites from the global
@@ -13,7 +13,7 @@ import { getCdseToken } from './_cdseAuth.js';
 import { readState, writeState, type AreaState, type ScanAlert } from './_scanState.js';
 import { GLOBAL_WATCHLIST } from './_watchlist.js';
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 60 }; // 44 sites at concurrency 3 ≈ 60 s, retry adds margin
 
 const SEEDS: Array<Pick<AreaState, 'areaId' | 'areaName' | 'region' | 'latitude' | 'longitude' | 'radiusKm'>> = [
   { areaId: 'seed-kalahari', areaName: 'Kalahari south transect', region: 'Southern African semi-arid savanna', latitude: -24.65, longitude: 21.85, radiusKm: 25 },
@@ -52,6 +52,21 @@ function bboxFor(lat: number, lon: number, radiusKm: number): [number, number, n
 type Obs = { date: string; value: number | null };
 
 async function fetchNdvi(area: { latitude: number; longitude: number; radiusKm: number }, token: string): Promise<Obs[]> {
+  // Retry once on 429 after a short delay. The CDSE free tier occasionally
+  // rate-limits parallel requests even when we are inside the concurrency cap.
+  try {
+    return await fetchNdviOnce(area, token);
+  } catch (e) {
+    const msg = String(e);
+    if (msg.includes('429')) {
+      await new Promise((r) => setTimeout(r, 3500));
+      return await fetchNdviOnce(area, token);
+    }
+    throw e;
+  }
+}
+
+async function fetchNdviOnce(area: { latitude: number; longitude: number; radiusKm: number }, token: string): Promise<Obs[]> {
   const to = new Date();
   const from = new Date(Date.now() - 3 * 365 * 86_400_000);
   const body = {
@@ -221,7 +236,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
 
   const token = await getCdseToken(clientId, clientSecret);
 
-  const results = await withConcurrency(ALL_SITES, 10, (spec) => scanOne(spec, token));
+  const results = await withConcurrency(ALL_SITES, 3, (spec) => scanOne(spec, token));
 
   const nextAreas: AreaState[] = [];
   const newAlerts: ScanAlert[] = [];
