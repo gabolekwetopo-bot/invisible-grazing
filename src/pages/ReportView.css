@@ -1,0 +1,104 @@
+﻿.report-page { padding-top: var(--ig-space-5); padding-bottom: var(--ig-space-8); }
+
+.report-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ig-space-4);
+  margin-bottom: var(--ig-space-5);
+  flex-wrap: wrap;
+}
+.report-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.8125rem; font-weight: 500;
+  color: var(--ig-text-muted);
+}
+.report-back:hover { color: var(--ig-forest); text-decoration: none; }
+.report-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.report-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--ig-radius);
+  font-size: 0.8125rem; font-weight: 600;
+  border: 1px solid var(--ig-border-strong);
+  background: var(--ig-surface); color: var(--ig-text-muted);
+}
+.report-btn:hover { border-color: var(--ig-forest); color: var(--ig-forest); text-decoration: none; }
+.report-btn-primary { background: var(--ig-forest); color: #fff; border-color: var(--ig-forest); }
+.report-btn-primary:hover { background: var(--ig-forest-dark); color: #fff; }
+
+.report {
+  background: var(--ig-surface);
+  border: 1px solid var(--ig-border);
+  border-radius: var(--ig-radius-lg);
+  padding: 40px 56px;
+  max-width: 900px;
+  margin: 0 auto;
+  box-shadow: var(--ig-shadow);
+}
+
+.report-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--ig-space-4); border-bottom: 1px solid var(--ig-border);
+  padding-bottom: var(--ig-space-4); margin-bottom: var(--ig-space-5);
+}
+.report-brand { display: flex; align-items: center; gap: 12px; }
+.report-logo { width: 44px; height: 44px; }
+.report-brand-name { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.14em; color: var(--ig-forest); }
+.report-brand-tag { font-size: 0.75rem; color: var(--ig-text-muted); margin-top: 3px; }
+.report-meta { font-size: 0.75rem; color: var(--ig-text-muted); text-align: right; line-height: 1.6; }
+
+.report-title { font-size: 1.75rem; margin-bottom: 8px; }
+.report-location { font-size: 0.875rem; color: var(--ig-text-muted); margin-bottom: var(--ig-space-5); }
+
+.report-section { margin-bottom: var(--ig-space-6); }
+.report-section h2 {
+  font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--ig-forest); margin-bottom: 12px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--ig-border);
+}
+
+.report-assessment { display: flex; align-items: center; gap: var(--ig-space-4); margin-bottom: var(--ig-space-4); }
+.report-risk {
+  padding: 6px 14px; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
+}
+.report-risk-low { background: var(--ig-risk-low-bg); color: var(--ig-risk-low); }
+.report-risk-moderate { background: var(--ig-risk-mod-bg); color: var(--ig-risk-mod); }
+.report-risk-high { background: var(--ig-risk-high-bg); color: var(--ig-risk-high); }
+.report-risk-insufficient { background: var(--ig-risk-insuf-bg); color: var(--ig-risk-insuf); }
+.report-headline { font-size: 1rem; font-weight: 600; }
+
+.report-dl { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; margin: 0; font-size: 0.875rem; }
+.report-dl dt { color: var(--ig-text-muted); font-weight: 500; }
+.report-dl dd { margin: 0; }
+
+.report-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.report-table th, .report-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ig-border); }
+.report-table th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ig-text-muted); }
+
+.report-chart { margin: var(--ig-space-4) 0; }
+
+.report-list { margin: 0; padding-left: 1.25em; font-size: 0.875rem; line-height: 1.7; }
+.report-list li { margin-bottom: 6px; }
+
+.report-notes p { font-size: 0.8125rem; color: var(--ig-text-muted); line-height: 1.6; margin: 0; }
+
+.report-footer {
+  display: flex; justify-content: space-between; gap: var(--ig-space-4);
+  border-top: 1px solid var(--ig-border);
+  padding-top: var(--ig-space-4); margin-top: var(--ig-space-6);
+  font-size: 0.75rem; color: var(--ig-text-muted);
+}
+
+/* Print */
+@media print {
+  .ig-header, .ig-demo-banner, .ig-footer, .no-print { display: none !important; }
+  .ig-main { padding: 0 !important; }
+  .ig-container { padding: 0 !important; max-width: none !important; }
+  .report {
+    box-shadow: none; border: none; border-radius: 0;
+    padding: 0; max-width: none;
+  }
+  .report-section { page-break-inside: avoid; }
+  body { background: #fff !important; }
+}

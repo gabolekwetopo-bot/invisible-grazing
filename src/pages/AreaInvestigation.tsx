@@ -6,7 +6,7 @@
 // data provenance, and a printable report.
 // =============================================================================
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Info } from 'lucide-react';
 import { getAreaById } from '../lib/areas';
@@ -15,6 +15,8 @@ import { DATA_SOURCES } from '../lib/sources';
 import { formatDate, formatLatLon, formatRelative } from '../lib/format';
 import RiskBadge from '../components/RiskBadge';
 import TimeSeriesChart from '../components/TimeSeriesChart';
+import ActionPanel from '../components/ActionPanel';
+import NeighbourCompare from '../components/NeighbourCompare';
 import './AreaInvestigation.css';
 
 export default function AreaInvestigation() {
@@ -22,6 +24,9 @@ export default function AreaInvestigation() {
   const area = id ? getAreaById(id) : undefined;
 
   const risk = useMemo(() => (area ? assessArea(area) : null), [area]);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const compareRef = useRef<HTMLDivElement>(null);
+  const [showCompare, setShowCompare] = useState(false);
 
   if (!area || !risk) {
     return (
@@ -76,7 +81,7 @@ export default function AreaInvestigation() {
       )}
 
       <section className="area-grid">
-        <div className="card area-block area-chart">
+        <div className="card area-block area-chart" ref={chartRef}>
           <div className="card-head">
             <h2>Vegetation and rainfall over time</h2>
             <span className="ig-muted">
@@ -114,14 +119,28 @@ export default function AreaInvestigation() {
             </ul>
 
             <h3>Recommended next steps</h3>
-            <ul className="plain-list">
-              {risk.recommendedActions.map((x, i) => (
-                <li key={i}>{x}</li>
-              ))}
-            </ul>
+            <ActionPanel
+              area={area}
+              risk={risk}
+              onCompare={() => {
+                setShowCompare(true);
+                setTimeout(() => {
+                  compareRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 80);
+              }}
+              onReviewRainfall={() => {
+                chartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+            />
           </div>
         </aside>
       </section>
+
+      {showCompare && (
+        <div ref={compareRef}>
+          <NeighbourCompare area={area} onClose={() => setShowCompare(false)} />
+        </div>
+      )}
 
       <section className="card area-block">
         <div className="card-head">

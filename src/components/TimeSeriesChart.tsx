@@ -1,8 +1,9 @@
-// =============================================================================
+﻿// =============================================================================
 // INVISIBLE GRAZING — TimeSeriesChart
 // =============================================================================
-// Simple, readable time series for NDVI and rainfall. Two y-axes are used
-// because NDVI (0–1) and rainfall (mm) live on different scales.
+// Time series for NDVI and rainfall. Both series are bucketed to the first day
+// of the month before merging, so the two lines align on a shared x-axis even
+// when their native dates differ by a few days.
 // =============================================================================
 
 import {
@@ -24,28 +25,46 @@ interface Row {
   rainfall?: number | null;
 }
 
-/** Merge two series by date into one row-per-date array. */
-function mergeSeries(
-  ndvi?: ObservationSeries,
-  rainfall?: ObservationSeries,
-): Row[] {
-  const byDate = new Map<string, Row>();
+/** Convert any ISO date to the first day of its month, e.g. 2025-03-15 → 2025-03-01. */
+function toMonthStart(iso: string): string {
+  return iso.slice(0, 7) + '-01';
+}
+
+/**
+ * Merge two series into one row per calendar month. Values within the same
+ * month are averaged when more than one observation falls in that month.
+ */
+function mergeSeries(ndvi?: ObservationSeries, rainfall?: ObservationSeries): Row[] {
+  const buckets = new Map<string, { ndvi: number[]; rainfall: number[] }>();
 
   if (ndvi) {
     for (const o of ndvi.observations) {
-      const row = byDate.get(o.date) ?? { date: o.date };
-      row.ndvi = o.value;
-      byDate.set(o.date, row);
+      if (o.value == null) continue;
+      const key = toMonthStart(o.date);
+      const b = buckets.get(key) ?? { ndvi: [], rainfall: [] };
+      b.ndvi.push(o.value);
+      buckets.set(key, b);
     }
   }
   if (rainfall) {
     for (const o of rainfall.observations) {
-      const row = byDate.get(o.date) ?? { date: o.date };
-      row.rainfall = o.value;
-      byDate.set(o.date, row);
+      if (o.value == null) continue;
+      const key = toMonthStart(o.date);
+      const b = buckets.get(key) ?? { ndvi: [], rainfall: [] };
+      b.rainfall.push(o.value);
+      buckets.set(key, b);
     }
   }
-  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+
+  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+
+  return [...buckets.entries()]
+    .map(([date, b]) => ({
+      date,
+      ndvi: mean(b.ndvi),
+      rainfall: mean(b.rainfall),
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export default function TimeSeriesChart({
@@ -133,7 +152,7 @@ export default function TimeSeriesChart({
               stroke="var(--ig-forest)"
               strokeWidth={2}
               dot={false}
-              connectNulls={false}
+              connectNulls
             />
           )}
           {showRain && (
@@ -146,7 +165,7 @@ export default function TimeSeriesChart({
               strokeWidth={1.5}
               strokeDasharray="3 3"
               dot={false}
-              connectNulls={false}
+              connectNulls
             />
           )}
         </LineChart>

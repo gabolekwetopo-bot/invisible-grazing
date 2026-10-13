@@ -1,0 +1,75 @@
+﻿.action-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--ig-space-4) var(--ig-space-5);
+}
+
+.action-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--ig-surface);
+  border: 1px solid var(--ig-border);
+  border-radius: var(--ig-radius);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+  color: var(--ig-text);
+  text-decoration: none;
+}
+.action-row:hover:not(.is-disabled):not(:disabled) {
+  border-color: var(--ig-forest);
+  background: var(--ig-sand-light);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.action-row.is-disabled,
+.action-row:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.action-row.is-done {
+  border-color: var(--ig-risk-low);
+  background: var(--ig-risk-low-bg);
+}
+
+.action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: var(--ig-radius-sm);
+  background: var(--ig-sand-light);
+  color: var(--ig-forest);
+}
+.action-row:hover:not(.is-disabled) .action-icon { background: var(--ig-forest); color: #fff; }
+.action-row.is-done .action-icon { background: var(--ig-risk-low); color: #fff; }
+
+.action-spin { animation: actionSpin 0.9s linear infinite; }
+@keyframes actionSpin { to { transform: rotate(360deg); } }
+
+.action-text { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.action-label { font-size: 0.875rem; font-weight: 600; }
+.action-detail { font-size: 0.75rem; color: var(--ig-text-muted); line-height: 1.45; }
+
+.action-state {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--ig-text-soft);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-top: 4px;
+}
+.action-row:hover:not(.is-disabled) .action-state { color: var(--ig-forest); }
+.action-row.is-done .action-state { color: var(--ig-risk-low); }
+
+.action-footnote {
+  margin: 4px 0 0;
+  font-size: 0.6875rem;
+  color: var(--ig-text-muted);
+  line-height: 1.5;
+}
