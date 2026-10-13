@@ -63,7 +63,10 @@ export default function WarRoom() {
     area: s.area,
     risk: s.risk,
     latestObservationDate: s.latestObservationDate,
-    blip: blipIds.has(s.area.id),
+    // Blip if the server detected an alert in the last 24 h, OR if the site is
+    // currently classified Moderate. A moderate classification already means
+    // "worth investigating", so it earns a visible pulse on the map.
+    blip: blipIds.has(s.area.id) || s.risk.level === 'moderate',
   }));
 
   // Server-scanned watchlist sites, rendered from /api/state.
@@ -119,7 +122,7 @@ export default function WarRoom() {
         area,
         risk,
         latestObservationDate: a.lastScanAt.slice(0, 10),
-        blip: blipIds.has(a.areaId),
+        blip: blipIds.has(a.areaId) || a.lastRiskLevel === 'moderate',
       };
     });
 
