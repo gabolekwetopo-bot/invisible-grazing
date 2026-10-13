@@ -72,10 +72,16 @@ export function getAreaById(id: string): MonitoringArea | undefined {
   const local = getAllAreas().find((a) => a.id === id);
   if (local) return local;
 
-  // Fall back to server-scanned watchlist sites.
+  // Fall back to server-scanned watchlist sites. The synthesized object is
+  // cached by id so that repeated calls return the same reference, which keeps
+  // React effect dependencies stable and prevents render loops.
+  const cached = synthesizedServerAreas.get(id);
+  if (cached) return cached;
+
   const server = serverAreas.find((a) => a.areaId === id);
   if (!server) return undefined;
-  return {
+
+  const area: MonitoringArea = {
     id: server.areaId,
     name: server.areaName,
     region: server.region,
@@ -88,6 +94,8 @@ export function getAreaById(id: string): MonitoringArea | undefined {
     description:
       `Global watchlist site. Scanned daily by the server. Last known risk: ${server.lastRiskLevel.toUpperCase()}.`,
   };
+  synthesizedServerAreas.set(id, area);
+  return area;
 }
 
 export function addUserArea(area: MonitoringArea): void {
@@ -128,9 +136,11 @@ export interface ServerAreaLite {
 }
 
 let serverAreas: ServerAreaLite[] = [];
+const synthesizedServerAreas = new Map<string, MonitoringArea>();
 
 export function setServerAreas(areas: ServerAreaLite[]): void {
   serverAreas = areas;
+  synthesizedServerAreas.clear();
 }
 
 export function getServerAreas(): ServerAreaLite[] {

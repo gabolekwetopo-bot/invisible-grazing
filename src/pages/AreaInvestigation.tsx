@@ -1,4 +1,4 @@
-﻿// =============================================================================
+// =============================================================================
 // INVISIBLE GRAZING — Area investigation page
 // =============================================================================
 // One page per monitoring area: location, vegetation series, rainfall context,
@@ -103,7 +103,8 @@ export default function AreaInvestigation() {
     return () => {
       cancelled = true;
     };
-  }, [area]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [area?.id]);
 
   const displayArea: MonitoringArea | undefined = hydratedArea ?? area;
   const risk = useMemo(() => (displayArea ? assessArea(displayArea) : null), [displayArea]);
