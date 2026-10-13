@@ -1,0 +1,19 @@
+.reports-page { display: flex; flex-direction: column; gap: var(--ig-space-5); }
+.reports-page h1 { margin-bottom: var(--ig-space-2); }
+.reports-page p { max-width: 820px; }
+
+.reports-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.reports-table th, .reports-table td {
+  text-align: left; padding: var(--ig-space-3) var(--ig-space-5);
+  border-bottom: 1px solid var(--ig-border);
+}
+.reports-table th {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ig-text-muted); font-weight: 600; background: var(--ig-sand-light);
+}
+.reports-table tr:last-child td { border-bottom: none; }
+.reports-actions { display: flex; gap: var(--ig-space-3); }
+.report-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.8125rem; color: var(--ig-forest); font-weight: 500;
+}

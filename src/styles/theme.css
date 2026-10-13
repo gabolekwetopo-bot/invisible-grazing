@@ -1,0 +1,76 @@
+/* ==========================================================================
+   INVISIBLE GRAZING — Design tokens
+   Deep forest green primary, natural earth tones, restrained risk colours.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand ---- */
+  --ig-forest:        #1f3d2b;   /* deep forest green — primary */
+  --ig-forest-dark:   #16301f;
+  --ig-forest-light:  #2f5c40;
+  --ig-moss:          #6b8e6b;
+
+  /* ---- Earth tones ---- */
+  --ig-sand:          #e8e2d5;
+  --ig-sand-light:    #f5f1e8;
+  --ig-clay:          #b58a6a;
+  --ig-soil:          #4a3f33;
+
+  /* ---- Neutrals ---- */
+  --ig-bg:            #fafaf7;
+  --ig-surface:       #ffffff;
+  --ig-border:        #e2ddd2;
+  --ig-border-strong: #c9c2b3;
+  --ig-text:          #1c1c1a;
+  --ig-text-muted:    #6b6b66;
+  --ig-text-soft:     #8c8c86;
+
+  /* ---- Risk indicators (restrained) ---- */
+  --ig-risk-low:      #4a7c59;   /* moss green */
+  --ig-risk-low-bg:   #e6efe8;
+  --ig-risk-mod:      #b98900;   /* amber */
+  --ig-risk-mod-bg:   #faf0d6;
+  --ig-risk-high:     #b23a2e;   /* restrained red */
+  --ig-risk-high-bg:  #f7e3e0;
+  --ig-risk-insuf:    #6b6b66;   /* grey */
+  --ig-risk-insuf-bg: #ececea;
+
+  /* ---- Data provenance ---- */
+  --ig-demo:          #7a4ea3;   /* purple accent for simulated data */
+  --ig-demo-bg:       #f0e8f7;
+
+  /* ---- Typography ---- */
+  --ig-font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --ig-font-mono: "JetBrains Mono", "Consolas", ui-monospace, monospace;
+
+  /* ---- Spacing scale ---- */
+  --ig-space-1: 0.25rem;
+  --ig-space-2: 0.5rem;
+  --ig-space-3: 0.75rem;
+  --ig-space-4: 1rem;
+  --ig-space-5: 1.5rem;
+  --ig-space-6: 2rem;
+  --ig-space-7: 3rem;
+  --ig-space-8: 4rem;
+
+  /* ---- Radii ---- */
+  --ig-radius-sm: 4px;
+  --ig-radius:    8px;
+  --ig-radius-lg: 12px;
+
+  /* ---- Shadows ---- */
+  --ig-shadow-sm: 0 1px 2px rgba(28,28,26,0.05);
+  --ig-shadow:    0 2px 8px rgba(28,28,26,0.07);
+  --ig-shadow-lg: 0 8px 24px rgba(28,28,26,0.10);
+
+  /* ---- Layout ---- */
+  --ig-header-height: 64px;
+  --ig-sidebar-width: 260px;
+  --ig-max-width: 1440px;
+}
+
+/* Risk class helpers used across components */
+.risk-low      { color: var(--ig-risk-low);      background: var(--ig-risk-low-bg); }
+.risk-moderate { color: var(--ig-risk-mod);      background: var(--ig-risk-mod-bg); }
+.risk-high     { color: var(--ig-risk-high);     background: var(--ig-risk-high-bg); }
+.risk-insufficient { color: var(--ig-risk-insuf); background: var(--ig-risk-insuf-bg); }

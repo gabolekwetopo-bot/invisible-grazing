@@ -1,0 +1,85 @@
+.ig-layout { min-height: 100%; display: flex; flex-direction: column; }
+
+/* Header */
+.ig-header {
+  background: var(--ig-surface);
+  border-bottom: 1px solid var(--ig-border);
+  position: sticky; top: 0; z-index: 500;
+}
+.ig-header-inner {
+  max-width: var(--ig-max-width);
+  margin: 0 auto;
+  padding: 0 var(--ig-space-5);
+  min-height: var(--ig-header-height);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--ig-space-5);
+}
+.ig-brand {
+  display: flex; align-items: center; gap: var(--ig-space-3);
+  min-width: 0;
+}
+.ig-brand:hover { text-decoration: none; }
+.ig-brand-mark {
+  width: 40px; height: 40px; flex: 0 0 40px; border-radius: var(--ig-radius);
+  background: var(--ig-forest); color: #fff;
+  font-weight: 700; font-size: 0.9rem; letter-spacing: 0.02em;
+  display: flex; align-items: center; justify-content: center;
+}
+.ig-brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.ig-brand-name {
+  font-weight: 700; color: var(--ig-forest); letter-spacing: 0.06em;
+  font-size: 0.875rem; white-space: nowrap;
+}
+.ig-brand-tag {
+  font-size: 0.75rem; color: var(--ig-text-muted);
+  margin-top: 2px; white-space: nowrap;
+}
+
+/* Nav */
+.ig-nav { display: flex; gap: var(--ig-space-1); flex-wrap: wrap; }
+.ig-nav-link {
+  display: inline-flex; align-items: center; gap: var(--ig-space-2);
+  padding: var(--ig-space-2) var(--ig-space-3);
+  border-radius: var(--ig-radius);
+  color: var(--ig-text-muted); font-size: 0.875rem; font-weight: 500;
+  white-space: nowrap;
+}
+.ig-nav-link:hover { background: var(--ig-sand-light); color: var(--ig-text); text-decoration: none; }
+.ig-nav-link.is-active { background: var(--ig-forest); color: #fff; }
+
+/* Demo banner */
+.ig-demo-banner {
+  background: var(--ig-sand-light);
+  border-bottom: 1px solid var(--ig-border);
+  color: var(--ig-soil);
+  font-size: 0.8125rem;
+  padding: var(--ig-space-2) var(--ig-space-5);
+  display: flex; align-items: center; gap: var(--ig-space-2);
+  justify-content: center; text-align: center;
+}
+.ig-demo-banner strong { color: var(--ig-forest); }
+
+/* Main */
+.ig-main { flex: 1; padding: var(--ig-space-6) 0 var(--ig-space-8); }
+
+/* Footer */
+.ig-footer { border-top: 1px solid var(--ig-border); background: var(--ig-surface); }
+.ig-footer-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--ig-space-4);
+  padding: var(--ig-space-4) var(--ig-space-5);
+  font-size: 0.8125rem; color: var(--ig-text-muted);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .ig-header-inner {
+    flex-direction: column; height: auto;
+    padding: var(--ig-space-3) var(--ig-space-4);
+    gap: var(--ig-space-2); align-items: stretch;
+  }
+  .ig-brand { justify-content: center; }
+  .ig-brand-text { align-items: center; }
+  .ig-nav { justify-content: center; }
+  .ig-footer-inner { flex-direction: column; text-align: center; }
+}

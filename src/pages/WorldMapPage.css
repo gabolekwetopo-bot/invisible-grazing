@@ -1,0 +1,37 @@
+.map-page { display: flex; flex-direction: column; gap: var(--ig-space-4); }
+.map-head h1 { margin-bottom: var(--ig-space-2); }
+.map-head p { max-width: 780px; }
+
+.map-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--ig-space-2);
+  padding: var(--ig-space-3) var(--ig-space-4);
+  font-size: 0.8125rem;
+}
+.map-chip {
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--ig-border-strong);
+  background: var(--ig-surface); color: var(--ig-text-muted);
+  font-size: 0.75rem; font-weight: 500;
+}
+.map-chip:hover { border-color: var(--ig-forest); color: var(--ig-forest); }
+.map-chip.is-active { background: var(--ig-forest); color: #fff; border-color: var(--ig-forest); }
+
+.map-full { overflow: hidden; }
+.map-full .ig-map-wrap { padding: var(--ig-space-2); }
+
+.map-chip-add {
+  background: var(--ig-forest); color: #fff; border-color: var(--ig-forest);
+  display: inline-flex; align-items: center; gap: 5px;
+  font-weight: 600;
+}
+.map-chip-add:hover { background: var(--ig-forest-dark); color: #fff; }
+.map-chip-add.is-active { background: var(--ig-risk-high); border-color: var(--ig-risk-high); color: #fff; }
+
+.map-pick-hint {
+  background: var(--ig-risk-mod-bg); color: var(--ig-risk-mod);
+  padding: 8px 14px; border-radius: var(--ig-radius);
+  font-size: 0.8125rem; font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--ig-risk-mod) 35%, transparent);
+}
+
+.ig-map-wrap.is-picking .leaflet-container { cursor: crosshair !important; }
