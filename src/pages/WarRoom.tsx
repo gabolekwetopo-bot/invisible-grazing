@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getAllAreas } from '../lib/areas';
 import { useLiveScan, type ScanAlert } from '../lib/scan';
+import { useServerState } from '../lib/serverState';
 import type { RiskLevel } from '../types';
 import WorldMap, { type MapPoint } from '../components/WorldMap';
 import RiskBadge from '../components/RiskBadge';
@@ -47,10 +48,21 @@ export default function WarRoom() {
     SCAN_INTERVAL_MS,
   );
 
+  const { state: serverState, loading: serverLoading } = useServerState();
+
+  // Markers blip if the server detected an alert on that site in the last 24 hours.
+  const recentAlertCutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const blipIds = new Set(
+    serverState.areas
+      .filter((a) => a.lastAlertAt && new Date(a.lastAlertAt).getTime() >= recentAlertCutoff)
+      .map((a) => a.areaId),
+  );
+
   const points: MapPoint[] = scans.map((s) => ({
     area: s.area,
     risk: s.risk,
     latestObservationDate: s.latestObservationDate,
+    blip: blipIds.has(s.area.id),
   }));
 
   const filteredScans = filter === 'all' ? scans : scans.filter((s) => s.risk.level === filter);
@@ -88,7 +100,21 @@ export default function WarRoom() {
               {scans.length === 1 ? '' : 's'}
             </span>
             <span className="wr-dot-sep">·</span>
-            <span>Last scan {lastScanAt ? formatRelative(lastScanAt) : '—'}</span>
+            <span>Client scan {lastScanAt ? formatRelative(lastScanAt) : '—'}</span>
+            {serverState.lastRunAt && (
+              <>
+                <span className="wr-dot-sep">·</span>
+                <span className="wr-server-scan">
+                  Server scan {formatRelative(serverState.lastRunAt)} · {serverState.areas.length} sites
+                </span>
+              </>
+            )}
+            {!serverState.lastRunAt && !serverLoading && (
+              <>
+                <span className="wr-dot-sep">·</span>
+                <span className="wr-server-scan wr-server-pending">Server scan: awaiting first daily run</span>
+              </>
+            )}
           </div>
           <div className="wr-progress" aria-hidden="true">
             <div className="wr-progress-fill" style={{ width: `${cycleProgress * 100}%` }} />

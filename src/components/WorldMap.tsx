@@ -9,6 +9,8 @@ export interface MapPoint {
   area: MonitoringArea;
   risk: RiskAssessment;
   latestObservationDate?: string;
+  /** When true the marker blinks to indicate a recent alert. */
+  blip?: boolean;
 }
 
 const RISK_COLORS: Record<RiskAssessment['level'], string> = {
@@ -130,7 +132,7 @@ export default function WorldMap({
         />
         <ClickCatcher enabled={pickMode} onClick={(lat, lon) => onPick?.(lat, lon)} />
 
-        {points.map(({ area, risk, latestObservationDate }) => {
+        {points.map(({ area, risk, latestObservationDate, blip }) => {
           const color = RISK_COLORS[risk.level];
           const isDemo = area.demonstration;
           return (
@@ -144,6 +146,9 @@ export default function WorldMap({
                 fillOpacity: isDemo ? 0.85 : 1,
                 weight: 2,
                 dashArray: isDemo ? '4 3' : undefined,
+                className: blip
+                  ? (risk.level === 'high' ? 'ig-blip ig-blip-halo' : 'ig-blip')
+                  : undefined,
               }}
               eventHandlers={{ click: () => onSelect?.(area.id) }}
             >

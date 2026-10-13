@@ -107,3 +107,34 @@ code, pre {
   border: 2px solid var(--ig-bg);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--ig-text-soft); }
+
+/* ==========================================================================
+   Invisible Grazing — blinking markers for recently-alerted sites
+   Applied to a Leaflet circle marker via its className option.
+   ========================================================================== */
+
+@keyframes igBlip {
+  0%   { stroke-width: 2; stroke-opacity: 1; }
+  40%  { stroke-width: 6; stroke-opacity: 0.9; }
+  100% { stroke-width: 2; stroke-opacity: 1; }
+}
+
+@keyframes igHalo {
+  0%   { filter: drop-shadow(0 0 0 rgba(178, 58, 46, 0)); }
+  50%  { filter: drop-shadow(0 0 6px rgba(178, 58, 46, 0.9)); }
+  100% { filter: drop-shadow(0 0 0 rgba(178, 58, 46, 0)); }
+}
+
+/* Applied by className on CircleMarker */
+.leaflet-interactive.ig-blip {
+  animation: igBlip 2.4s ease-in-out infinite;
+}
+
+.leaflet-interactive.ig-blip-halo {
+  animation: igBlip 2.4s ease-in-out infinite, igHalo 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-interactive.ig-blip,
+  .leaflet-interactive.ig-blip-halo { animation: none !important; }
+}

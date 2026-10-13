@@ -288,3 +288,11 @@
   .wr-spin,
   .wr-alert.is-new::before { animation: none !important; }
 }
+
+.wr-server-scan {
+  color: #8fc9a1;
+  font-weight: 500;
+}
+.wr-server-pending {
+  color: #b98900;
+}
