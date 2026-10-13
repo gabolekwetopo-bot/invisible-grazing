@@ -1,6 +1,7 @@
-﻿import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Hero from './pages/Hero';
+import WarRoom from './pages/WarRoom';
 import Dashboard from './pages/Dashboard';
 import WorldMapPage from './pages/WorldMapPage';
 import AreaInvestigation from './pages/AreaInvestigation';
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/area/:id" element={<AreaInvestigation />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/about" element={<About />} />
+          <Route path="/warroom" element={<WarRoom />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

@@ -62,15 +62,6 @@ export default function Reports() {
                   </td>
                   <td className="ig-muted">{formatDate(latest?.date)}</td>
                   <td>
-                    {a.demonstration ? (
-                      <span className="ig-badge" style={{ background: 'var(--ig-demo-bg)', color: 'var(--ig-demo)' }}>
-                        Demonstration
-                      </span>
-                    ) : (
-                      <span className="ig-badge" style={{ background: 'var(--ig-risk-low-bg)', color: 'var(--ig-risk-low)' }}>
-                        Observations
-                      </span>
-                    )}
                   </td>
                   <td className="reports-actions">
                     <Link to={`/area/${a.id}`} className="report-link">

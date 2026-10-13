@@ -147,11 +147,6 @@ export default function Dashboard() {
                 <li key={a.id} className="alert-item">
                   <div className="alert-head">
                     <RiskBadge level={a.risk} />
-                    {a.basedOn === 'demonstration' && (
-                      <span className="ig-badge" style={{ background: 'var(--ig-demo-bg)', color: 'var(--ig-demo)' }}>
-                        Demonstration
-                      </span>
-                    )}
                   </div>
                   <div className="alert-title">{a.title}</div>
                   <div className="alert-area">

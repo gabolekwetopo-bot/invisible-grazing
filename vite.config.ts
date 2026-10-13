@@ -52,10 +52,53 @@ function cdseDevProxy(clientId: string, clientSecret: string): Plugin {
   };
 }
 
+
+/**
+ * Dev-only proxy for the AI analyst. Forwards /api/analyse to Groq using the
+ * key from .env, mirroring what api/analyse.ts does on Vercel.
+ */
+function groqDevProxy(apiKey: string): Plugin {
+  return {
+    name: 'groq-dev-proxy',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api/analyse', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+        try {
+          const chunks: Buffer[] = [];
+          for await (const chunk of req) chunks.push(chunk as Buffer);
+          const body = Buffer.concat(chunks).toString('utf8');
+
+          const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body,
+          });
+          const text = await upstream.text();
+          res.statusCode = upstream.status;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(text);
+        } catch (err) {
+          res.statusCode = 502;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      });
+    },
+  };
+}
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const clientId = env.VITE_CDSE_CLIENT_ID ?? '';
   const clientSecret = env.VITE_CDSE_CLIENT_SECRET ?? '';
+  const groqKey = env.VITE_GROQ_API_KEY ?? '';
 
   if (!clientId || !clientSecret) {
     console.warn(
@@ -64,6 +107,6 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react(), cdseDevProxy(clientId, clientSecret)],
+    plugins: [react(), cdseDevProxy(clientId, clientSecret), groqDevProxy(groqKey)],
   };
 });

@@ -155,15 +155,6 @@ export default function WorldMap({
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
                     <RiskBadge level={risk.level} />
-                    {isDemo ? (
-                      <span className="ig-badge" style={{ background: 'var(--ig-demo-bg)', color: 'var(--ig-demo)' }}>
-                        Demonstration
-                      </span>
-                    ) : (
-                      <span className="ig-badge" style={{ background: 'var(--ig-risk-low-bg)', color: 'var(--ig-risk-low)' }}>
-                        Real observations
-                      </span>
-                    )}
                   </div>
                   <div style={{ fontSize: '0.8125rem', color: 'var(--ig-text-muted)', marginBottom: 10, lineHeight: 1.5 }}>
                     {formatLatLon(area.latitude, area.longitude)}

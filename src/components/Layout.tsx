@@ -4,12 +4,13 @@
 
 import { NavLink, Outlet } from 'react-router-dom';
 import './Layout.css';
-import { Globe2, LayoutDashboard, Info, FileText, TriangleAlert } from 'lucide-react';
+import { Globe2, LayoutDashboard, Info, FileText, TriangleAlert, Radar } from 'lucide-react';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/map', label: 'World Map', icon: Globe2 },
   { to: '/reports', label: 'Reports', icon: FileText },
+  { to: '/warroom', label: 'War Room', icon: Radar },
   { to: '/about', label: 'About & Method', icon: Info },
 ];
 
@@ -27,11 +28,10 @@ export default function Layout() {
           </NavLink>
 
           <nav className="ig-nav" aria-label="Primary">
-            {navItems.map(({ to, label, icon: Icon, end }) => (
+            {navItems.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
-                end={end}
                 className={({ isActive }) => 'ig-nav-link' + (isActive ? ' is-active' : '')}
               >
                 <Icon size={16} strokeWidth={2} />

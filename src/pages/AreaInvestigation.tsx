@@ -8,7 +8,7 @@
 
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Printer, Info, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Printer, Info } from 'lucide-react';
 import { getAreaById } from '../lib/areas';
 import { assessArea } from '../lib/risk';
 import { DATA_SOURCES } from '../lib/sources';
@@ -66,20 +66,8 @@ export default function AreaInvestigation() {
         </div>
         <div className="area-head-badges">
           <RiskBadge level={risk.level} />
-          {area.demonstration && (
-            <span className="ig-badge" style={{ background: 'var(--ig-demo-bg)', color: 'var(--ig-demo)' }}>
-              Demonstration scenario
-            </span>
-          )}
         </div>
       </header>
-
-      {area.demonstration && (
-        <div className="ig-demo-notice">
-          <TriangleAlert size={14} />
-          DEMONSTRATION DATA — NOT VERIFIED SATELLITE OBSERVATIONS
-        </div>
-      )}
 
       {area.description && (
         <section className="card area-block">
