@@ -10,7 +10,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Download, Sparkles, Loader2 } from 'lucide-react';
-import { getAreaById } from '../lib/areas';
+import { getAreaById, setServerAreas } from '../lib/areas';
+import { useServerState } from '../lib/serverState';
 import { assessArea } from '../lib/risk';
 import { DATA_SOURCES } from '../lib/sources';
 import { formatDate, formatLatLon, formatRelative } from '../lib/format';
@@ -20,6 +21,24 @@ import './ReportView.css';
 export default function ReportView() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const { state: serverState, loading: serverLoading } = useServerState();
+  useEffect(() => {
+    if (serverState.areas.length) {
+      setServerAreas(
+        serverState.areas.map((a) => ({
+          areaId: a.areaId,
+          areaName: a.areaName,
+          region: a.region,
+          latitude: a.latitude,
+          longitude: a.longitude,
+          radiusKm: a.radiusKm,
+          lastRiskLevel: a.lastRiskLevel,
+          lastScanAt: a.lastScanAt,
+          lastAlertAt: a.lastAlertAt,
+        })),
+      );
+    }
+  }, [serverState]);
   const wantsAI = searchParams.get('ai') === '1';
   const area = id ? getAreaById(id) : undefined;
 
@@ -30,7 +49,65 @@ export default function ReportView() {
   // Build a stable payload from the area and its assessment once.
   const aiPayload = useMemo(() => {
     if (!area) return null;
-    const risk = assessArea(area);
+    // If this site came from the server scan, the server already classified it
+  // using the real Sentinel-2 and NASA POWER data at the last run. Prefer that
+  // classification. Only fall back to a local recomputation when the server has
+  // no record of this site.
+  const serverHit = serverState.areas.find((a) => a.areaId === area.id);
+  const serverRisk = serverHit
+    ? {
+        level: serverHit.lastRiskLevel,
+        headline:
+          serverHit.lastRiskLevel === 'insufficient'
+            ? 'Insufficient observations for a reliable assessment.'
+            : serverHit.lastRiskLevel === 'high'
+            ? 'Severe vegetation decline detected at the last server scan.'
+            : serverHit.lastRiskLevel === 'moderate'
+            ? 'Material vegetation decline — investigate potential causes.'
+            : 'Vegetation appears broadly stable over the assessment window.',
+        evidence: [
+          {
+            label: 'Usable NDVI observations',
+            value: `${serverHit.lastRiskLevel === 'insufficient' ? '0 (minimum 6)' : 'Assessed by server scan'}`,
+            direction: 'neutral' as const,
+          },
+          {
+            label: 'Last NDVI value',
+            value: serverHit.lastNdvi != null ? String(serverHit.lastNdvi) : '—',
+            direction: 'neutral' as const,
+          },
+          {
+            label: 'Last rainfall value',
+            value: serverHit.lastRainfall != null ? `${serverHit.lastRainfall} mm` : '—',
+            direction: 'neutral' as const,
+          },
+          {
+            label: 'Last server scan',
+            value: new Date(serverHit.lastScanAt).toISOString().slice(0, 16).replace('T', ' ') + ' UTC',
+            direction: 'neutral' as const,
+          },
+        ],
+        alternativeExplanations: [
+          'Drought or reduced rainfall',
+          'Fire',
+          'Land clearing or cultivation change',
+          'Seasonal phenology (green-up / senescence)',
+          'Pest or disease outbreak',
+          'Cloud contamination or sensor artefacts',
+          'A change in grazing pressure (requires independent field evidence to confirm)',
+        ],
+        recommendedActions: [
+          'Compare with neighbouring areas to see whether the decline is local or regional.',
+          'Review recent rainfall records for the same period.',
+          'Check for fire, land-use change, or new cultivation in the area.',
+          'Conduct a field inspection to identify the cause of the decline.',
+        ],
+        computedAt: serverHit.lastScanAt,
+        basedOn: 'observations' as const,
+      }
+    : null;
+
+  const risk = serverRisk ?? assessArea(area);
     const ndvi = area.series.find((s) => s.indicator === 'NDVI');
     const rainfall = area.series.find((s) => s.indicator === 'Rainfall');
     const usableNdvi = ndvi?.observations.filter((o) => o.value != null) ?? [];
@@ -141,6 +218,16 @@ export default function ReportView() {
   }, []);
 
   if (!area) {
+    if (serverLoading) {
+      return (
+        <div className="ig-container report-page">
+          <div className="area-hydrating">
+            <div className="area-hydrating-spinner" />
+            Loading monitoring area…
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="ig-container report-page">
         <h1>Area not found</h1>
@@ -151,7 +238,65 @@ export default function ReportView() {
     );
   }
 
-  const risk = assessArea(area);
+  // If this site came from the server scan, the server already classified it
+  // using the real Sentinel-2 and NASA POWER data at the last run. Prefer that
+  // classification. Only fall back to a local recomputation when the server has
+  // no record of this site.
+  const serverHit = serverState.areas.find((a) => a.areaId === area.id);
+  const serverRisk = serverHit
+    ? {
+        level: serverHit.lastRiskLevel,
+        headline:
+          serverHit.lastRiskLevel === 'insufficient'
+            ? 'Insufficient observations for a reliable assessment.'
+            : serverHit.lastRiskLevel === 'high'
+            ? 'Severe vegetation decline detected at the last server scan.'
+            : serverHit.lastRiskLevel === 'moderate'
+            ? 'Material vegetation decline — investigate potential causes.'
+            : 'Vegetation appears broadly stable over the assessment window.',
+        evidence: [
+          {
+            label: 'Usable NDVI observations',
+            value: `${serverHit.lastRiskLevel === 'insufficient' ? '0 (minimum 6)' : 'Assessed by server scan'}`,
+            direction: 'neutral' as const,
+          },
+          {
+            label: 'Last NDVI value',
+            value: serverHit.lastNdvi != null ? String(serverHit.lastNdvi) : '—',
+            direction: 'neutral' as const,
+          },
+          {
+            label: 'Last rainfall value',
+            value: serverHit.lastRainfall != null ? `${serverHit.lastRainfall} mm` : '—',
+            direction: 'neutral' as const,
+          },
+          {
+            label: 'Last server scan',
+            value: new Date(serverHit.lastScanAt).toISOString().slice(0, 16).replace('T', ' ') + ' UTC',
+            direction: 'neutral' as const,
+          },
+        ],
+        alternativeExplanations: [
+          'Drought or reduced rainfall',
+          'Fire',
+          'Land clearing or cultivation change',
+          'Seasonal phenology (green-up / senescence)',
+          'Pest or disease outbreak',
+          'Cloud contamination or sensor artefacts',
+          'A change in grazing pressure (requires independent field evidence to confirm)',
+        ],
+        recommendedActions: [
+          'Compare with neighbouring areas to see whether the decline is local or regional.',
+          'Review recent rainfall records for the same period.',
+          'Check for fire, land-use change, or new cultivation in the area.',
+          'Conduct a field inspection to identify the cause of the decline.',
+        ],
+        computedAt: serverHit.lastScanAt,
+        basedOn: 'observations' as const,
+      }
+    : null;
+
+  const risk = serverRisk ?? assessArea(area);
   const ndvi = area.series.find((s) => s.indicator === 'NDVI');
   const rainfall = area.series.find((s) => s.indicator === 'Rainfall');
 
