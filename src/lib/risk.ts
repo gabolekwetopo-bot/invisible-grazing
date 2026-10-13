@@ -33,16 +33,12 @@ const T = {
   /** NDVI change that counts as a severe decline. */
   NDVI_DECLINE_SEVERE: -0.10,
   /** NDVI change that counts as an improvement. */
-  NDVI_IMPROVEMENT: 0.05,
+  IMPROVEMENT: 0.05,
 };
 
 /* --------------------------------------------------------------------------
  * Helpers
  * ------------------------------------------------------------------------ */
-
-function monthsBetween(a: Date, b: Date): number {
-  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
-}
 
 /** Mean of a numeric array, ignoring nulls. Returns null when nothing to mean. */
 function mean(values: (number | null | undefined)[]): number | null {
@@ -203,9 +199,6 @@ export function assessArea(area: MonitoringArea): RiskAssessment {
     recommendedActions.unshift(
       'Prioritise a field inspection to identify the cause of the decline.',
     );
-  }
-  if (level === 'insufficient') {
-    recommendedActions.push('Continue collecting observations before acting on this signal.');
   }
 
   return {

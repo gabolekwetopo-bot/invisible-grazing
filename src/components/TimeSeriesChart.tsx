@@ -121,7 +121,7 @@ export default function TimeSeriesChart({
               border: '1px solid var(--ig-border)',
               boxShadow: 'var(--ig-shadow)',
             }}
-            labelFormatter={(d) => new Date(d).toDateString()}
+            labelFormatter={(d) => new Date(String(d)).toDateString()}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           {showNdvi && (
