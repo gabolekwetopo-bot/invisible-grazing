@@ -1,17 +1,24 @@
-// =============================================================================
+﻿// =============================================================================
 // INVISIBLE GRAZING — Working set of monitoring areas
 // =============================================================================
-// For the MVP this is a small in-memory store seeded with the demonstration
-// scenarios. It is intentionally decoupled from any page, so we can later swap
-// in real areas loaded from a data provider without touching the UI.
+// Combines user-created areas (persisted in localStorage) with four real seed
+// areas whose series are hydrated and cached by src/lib/seedHydrate.ts. When
+// the cache has data for a seed, it is merged in so every area returns with
+// real Sentinel-2 NDVI and real NASA POWER rainfall attached.
 // =============================================================================
 
-import type { MonitoringArea } from '../types';
+import type { MonitoringArea, ObservationSeries } from '../types';
 import { DEMONSTRATION_AREAS } from '../data/demonstration';
 
 const STORAGE_KEY = 'invisible-grazing.areas.v1';
+const SEED_CACHE_KEY = 'invisible-grazing.seedSeries.v1';
 
-/** User-configured areas are persisted in localStorage; demos are not. */
+interface SeedCacheEntry {
+  hydratedAt: string;
+  series: ObservationSeries[];
+}
+type SeedCache = Record<string, SeedCacheEntry>;
+
 function loadUserAreas(): MonitoringArea[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -27,14 +34,34 @@ function saveUserAreas(areas: MonitoringArea[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(areas));
   } catch {
-    /* quota or disabled storage — silently ignore for MVP */
+    /* quota or disabled storage */
   }
+}
+
+function loadSeedCache(): SeedCache {
+  try {
+    const raw = localStorage.getItem(SEED_CACHE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as SeedCache;
+  } catch {
+    return {};
+  }
+}
+
+/** Merge cached real series into the four seed areas. */
+function getHydratedSeeds(): MonitoringArea[] {
+  const cache = loadSeedCache();
+  return DEMONSTRATION_AREAS.map((area) => {
+    const entry = cache[area.id];
+    if (!entry || !entry.series?.length) return area;
+    return { ...area, series: entry.series };
+  });
 }
 
 let userAreas: MonitoringArea[] = loadUserAreas();
 
 export function getAllAreas(): MonitoringArea[] {
-  return [...userAreas, ...DEMONSTRATION_AREAS];
+  return [...userAreas, ...getHydratedSeeds()];
 }
 
 export function getUserAreas(): MonitoringArea[] {
@@ -55,7 +82,6 @@ export function removeUserArea(id: string): void {
   saveUserAreas(userAreas);
 }
 
-/** Simple id generator for user-created areas. */
 export function newAreaId(): string {
   return `area-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
