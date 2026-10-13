@@ -68,7 +68,7 @@ async function fetchNdvi(area: { latitude: number; longitude: number; radiusKm: 
 
 async function fetchNdviOnce(area: { latitude: number; longitude: number; radiusKm: number }, token: string): Promise<Obs[]> {
   const to = new Date();
-  const from = new Date(Date.now() - 3 * 365 * 86_400_000);
+  const from = new Date(Date.now() - 2 * 365 * 86_400_000);
   const body = {
     input: {
       bounds: { bbox: bboxFor(area.latitude, area.longitude, area.radiusKm), properties: { crs: 'http://www.opengis.net/def/crs/EPSG/0/4326' } },
@@ -236,7 +236,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
 
   const token = await getCdseToken(clientId, clientSecret);
 
-  const results = await withConcurrency(ALL_SITES, 3, (spec) => scanOne(spec, token));
+  const results = await withConcurrency(ALL_SITES, 6, (spec) => scanOne(spec, token));
 
   const nextAreas: AreaState[] = [];
   const newAlerts: ScanAlert[] = [];
